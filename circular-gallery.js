@@ -22,7 +22,7 @@
       this.wheelLockUntil = 0;
       this.didDrag = false;
       this.cardWidth = 300;
-      this.cardHeight = 350;
+      this.cardHeight = 300;
       this.spacing = 270;
       this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -85,7 +85,7 @@
       const height = this.root.clientHeight;
       if (!width || !height) return;
       this.cardWidth = clamp(width * (width < 600 ? 0.6 : 0.36), 210, 330);
-      this.cardHeight = Math.min(this.cardWidth * 1.19, height * 0.53);
+      this.cardHeight = Math.min(this.cardWidth, height * 0.53);
       this.spacing = this.cardWidth * 0.82 + 24;
       this.root.style.setProperty('--ring-card-width', `${this.cardWidth}px`);
       this.root.style.setProperty('--ring-card-height', `${this.cardHeight}px`);

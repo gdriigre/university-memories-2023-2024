@@ -4,7 +4,7 @@
   const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
   const wrap = (value, count) => ((value % count) + count) % count;
   const CARD_WIDTH = 300;
-  const CARD_HEIGHT = 380;
+  const CARD_HEIGHT = 300;
   const PERSPECTIVE = 1400;
 
   class DepthCarousel {

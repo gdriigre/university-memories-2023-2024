@@ -11,6 +11,13 @@
   --terracotta: #a8533b;
   --warm-outline: rgba(111, 69, 53, 0.17);
   --warm-glass: rgba(255, 249, 243, 0.88);
+  --print-paper: #fffbf2;
+  --print-mat: #f3e9de;
+  --print-edge: rgba(105, 73, 57, 0.16);
+  --print-radius: 5px;
+  --print-width: 5px;
+  --print-shadow: 0 10px 26px rgba(89, 58, 44, 0.15), 0 2px 5px rgba(89, 58, 44, 0.09);
+  --print-shadow-close: 0 17px 34px rgba(89, 58, 44, 0.19), 0 3px 8px rgba(89, 58, 44, 0.10);
   --shadow: 0 16px 34px rgba(80, 46, 37, 0.18), 0 2px 8px rgba(80, 46, 37, 0.1);
   --sunset-wash: linear-gradient(112deg, #f6c5a5 0%, #fae5d4 40%, #f5dbd1 66%, #c2c8dc 100%);
   font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -724,10 +731,11 @@ button {
   min-width: 0;
   gap: 4px;
   padding: 4px 4px 7px;
-  border: 1px solid var(--warm-outline);
-  border-radius: 10px;
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
   color: var(--green-deep);
-  background: var(--paper-bright);
+  background: var(--print-paper);
+  box-shadow: 0 2px 5px rgba(89, 58, 44, 0.08);
   cursor: zoom-in;
 }
 
@@ -735,12 +743,13 @@ button {
   display: block;
   width: 100%;
   aspect-ratio: 5 / 4;
-  border-radius: 6px;
-  background: #f2e1d6;
+  border-radius: 2px;
+  background: var(--print-mat);
   object-fit: contain;
 }
 
 .photo-list-card time {
+  color: #6e5345;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
@@ -813,14 +822,14 @@ button {
   top: 0;
   left: 0;
   width: 300px;
-  height: 380px;
-  padding: 0;
+  height: 300px;
+  padding: var(--print-width);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 18px;
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
   outline: 0;
-  background: #26362e;
-  box-shadow: 0 28px 72px rgba(20, 37, 31, 0.3), 0 4px 18px rgba(20, 37, 31, 0.18);
+  background: var(--print-paper);
+  box-shadow: var(--print-shadow);
   backface-visibility: hidden;
   transform-style: preserve-3d;
   will-change: transform, opacity;
@@ -837,8 +846,19 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+  border-radius: 2px;
+  background: var(--print-paper);
   object-fit: cover;
   pointer-events: none;
+}
+
+.depth-card[tabindex="0"] {
+  box-shadow: var(--print-shadow-close);
+}
+
+.depth-card[tabindex="0"] img,
+.ring-card[tabindex="0"] img {
+  object-fit: contain;
 }
 
 .depth-controls {
@@ -970,7 +990,7 @@ button {
   left: 50%;
   display: block;
   width: var(--ring-card-width, 300px);
-  height: calc(var(--ring-card-height, 350px) + 30px);
+  height: calc(var(--ring-card-height, 300px) + 30px);
   padding: 0;
   border: 0;
   outline: 0;
@@ -983,23 +1003,29 @@ button {
 .ring-card img {
   display: block;
   width: 100%;
-  height: var(--ring-card-height, 350px);
-  border: 5px solid white;
-  border-radius: 18px;
-  background: #dfe8e2;
-  box-shadow: 0 24px 55px rgba(20, 37, 31, 0.22), 0 4px 13px rgba(20, 37, 31, 0.1);
+  height: var(--ring-card-height, 300px);
+  padding: var(--print-width);
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
+  background: var(--print-paper);
+  box-shadow: var(--print-shadow);
   object-fit: cover;
   pointer-events: none;
+}
+
+.ring-card[tabindex="0"] img {
+  box-shadow: var(--print-shadow-close);
 }
 
 .ring-card time {
   display: block;
   padding-top: 9px;
-  color: #587064;
+  color: #6e5345;
   font-size: 0.76rem;
   font-weight: 650;
   letter-spacing: 0.09em;
   text-align: center;
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
 
@@ -1163,9 +1189,10 @@ button {
   content: "";
   position: absolute;
   inset: -4px;
-  border: 1px solid rgba(255, 255, 255, 0.94);
-  background: #fff;
-  box-shadow: var(--shadow);
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
+  background: var(--print-paper);
+  box-shadow: var(--print-shadow);
   transform: translateZ(-2px);
   pointer-events: none;
 }
@@ -1175,8 +1202,9 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+  border-radius: 2px;
   object-fit: cover;
-  background: #f2dfd3;
+  background: var(--print-mat);
   filter: none;
   backface-visibility: hidden;
   transform: translateZ(0);
@@ -1185,7 +1213,7 @@ button {
 
 .memory-card:hover,
 .memory-card:focus-visible {
-  filter: drop-shadow(0 18px 22px rgba(18, 41, 32, 0.26));
+  filter: drop-shadow(0 9px 12px rgba(89, 58, 44, 0.16));
 }
 
 .memory-card:focus-visible::before {
@@ -1194,13 +1222,13 @@ button {
 }
 
 .memory-card.is-featured::before {
-  inset: -6px;
-  box-shadow: 0 25px 48px rgba(80, 46, 37, 0.23), 0 5px 13px rgba(80, 46, 37, 0.11);
+  inset: -5px;
+  box-shadow: var(--print-shadow-close);
 }
 
 .memory-card.is-far::before {
   inset: -2px;
-  box-shadow: 0 8px 18px rgba(80, 46, 37, 0.13);
+  box-shadow: 0 5px 13px rgba(89, 58, 44, 0.12);
 }
 
 .memory-card time {
@@ -1534,8 +1562,12 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+  padding: var(--print-width);
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
+  background: var(--print-paper);
   object-fit: contain;
-  box-shadow: 0 12px 32px rgba(80, 46, 37, 0.19);
+  box-shadow: var(--print-shadow);
   pointer-events: none;
 }
 
@@ -1547,10 +1579,10 @@ button {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: clamp(16px, 2.15cqw, 28px);
-  border: 1px solid var(--warm-outline);
-  border-radius: 12px;
-  background: linear-gradient(155deg, #fffdf8 0%, #fffbf5 64%, #faece0 100%);
-  box-shadow: 0 12px 30px rgba(80, 46, 37, 0.1);
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
+  background: linear-gradient(155deg, #fffdf8 0%, var(--print-paper) 70%, #f7ede1 100%);
+  box-shadow: var(--print-shadow);
   color: var(--ink);
   touch-action: auto;
   user-select: text;
@@ -1708,8 +1740,9 @@ button {
   width: clamp(48px, 4.5vw, 60px);
   height: clamp(48px, 4.5vw, 60px);
   padding: 2px;
-  border: 1px solid var(--warm-outline);
-  border-radius: 8px;
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
+  background: var(--print-paper);
 }
 
 .photo-detail .same-day-photo-list button[aria-current="true"] {
@@ -1721,7 +1754,7 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 4px;
+  border-radius: 2px;
   object-fit: cover;
   pointer-events: none;
 }
