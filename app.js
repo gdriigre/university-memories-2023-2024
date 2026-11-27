@@ -25,7 +25,7 @@
   const photoDetailBody = photoDetail.querySelector('.photo-detail-body');
   const photoSpread = document.querySelector('#photo-detail-spread');
   const photoStage = document.querySelector('#photo-detail-stage');
-  const detailImage = document.querySelector('#photo-detail-image');
+  let detailImage = document.querySelector('#photo-detail-image');
   const detailDate = document.querySelector('#photo-detail-date');
   const detailCount = document.querySelector('#photo-detail-count');
   const sameDayPhotos = document.querySelector('#same-day-photos');
@@ -88,6 +88,7 @@
   let lastPointer = null;
   let pinchStart = null;
   let cameraFrame = 0;
+  let cameraRevision = 0;
   let imageRefreshTimer = 0;
   let imageUpgrades = 0;
   let zoomAnchor = null;
@@ -303,6 +304,7 @@
   function stopCameraAnimation() {
     cancelAnimationFrame(cameraFrame);
     cameraFrame = 0;
+    cameraRevision++;
   }
 
   function interpolateView(from, to, progress) {
@@ -315,9 +317,10 @@
 
   function animateView(next, { duration = 620, ease = progress => 1 - (1 - progress) ** 3, onComplete } = {}) {
     stopCameraAnimation();
+    const revision = cameraRevision;
     if (reducedMotion.matches) {
       setView(next);
-      onComplete?.();
+      onComplete?.(revision);
       return;
     }
     const from = { ...view };
@@ -328,7 +331,7 @@
       if (progress < 1) cameraFrame = requestAnimationFrame(frame);
       else {
         cameraFrame = 0;
-        onComplete?.();
+        onComplete?.(revision);
       }
     };
     cameraFrame = requestAnimationFrame(frame);
@@ -621,6 +624,22 @@
     };
   }
 
+  function loadDetailImage(src) {
+    const image = new Image();
+    image.decoding = 'async';
+    image.src = src;
+    return image.decode().then(() => image);
+  }
+
+  function displayPreparedImage(image) {
+    image.id = detailImage.id;
+    image.alt = detailImage.alt;
+    image.draggable = false;
+    image.dataset.fixedRatio = '';
+    detailImage.replaceWith(image);
+    detailImage = image;
+  }
+
   function showRandomMemory() {
     if (!filtered.length) return;
     const choices = filtered.filter(item => item.id !== lastRandomPhotoId && item.id !== activeFocusId);
@@ -639,6 +658,12 @@
     const card = cards.get(item.id);
     if (!card) return;
 
+    let fullImage;
+    const full = loadDetailImage(item.full).then(image => {
+      fullImage = image;
+      return image;
+    });
+    const ready = Promise.any([full, loadDetailImage(item.thumb)]).catch(() => null);
     const startFromOverview = activeMode !== 'space' || !spaceEnd.hidden;
     exitFocus(false);
     setMode('space');
@@ -647,11 +672,23 @@
     animateView(viewCenteredOn(card.layout, Math.max(560, Math.min(620, depth))), {
       duration: 1150,
       ease: progress => progress * progress * (3 - 2 * progress),
-      onComplete: () => {
-        if (activeMode !== 'space' || activeFocusId || cards.get(item.id) !== card
+      onComplete: async revision => {
+        const image = fullImage ?? await ready;
+        if (revision !== cameraRevision || activeMode !== 'space' || activeFocusId || cards.get(item.id) !== card
           || storyBackup.isOpen || photoImport.isOpen || photoTrash.isOpen) return;
         lastRandomPhotoId = item.id;
-        focusPhoto(item.id, card.element);
+        if (!image) {
+          photoTrash.announce('这张照片暂时无法加载，可以再随机选一张。');
+          return;
+        }
+        focusPhoto(item.id, card.element, undefined, filtered, image);
+        if (image !== fullImage) {
+          full.then(sharp => {
+            if (detailImage === image && activeFocusId === item.id && 'fixedRatio' in image.dataset) {
+              displayPreparedImage(sharp);
+            }
+          }, () => {});
+        }
       },
     });
   }
@@ -925,7 +962,7 @@
     }
   }
 
-  function focusPhoto(id, origin, event, sequence = detailPhotos ?? filtered) {
+  function focusPhoto(id, origin, event, sequence = detailPhotos ?? filtered, preparedImage = null) {
     const index = sequence.findIndex((item) => item.id === id);
     if (index < 0) return;
     if (isTourMode()) pauseTour();
@@ -933,6 +970,7 @@
     const start = opening ? origin?.getBoundingClientRect() : null;
     const item = sequence[index];
     if (opening) {
+      stopCameraAnimation();
       focusOrigin = { id, mode: activeMode, element: origin };
       // Find the photos at the click before the detail overlay covers the scene.
       if (activeMode !== 'list') renderOverlapChoices(id, start, event);
@@ -943,9 +981,15 @@
     photoDetail.hidden = false;
     viewport.classList.add('is-focused');
     syncBackgroundInteraction();
-    detailImage.src = item.full;
-    photoSpread.style.setProperty('--photo-ratio', item.width / item.height || 1.5);
     detailImage.alt = `${formatDate(item.date)} 的照片`;
+    if (preparedImage) {
+      photoSpread.style.setProperty('--photo-ratio', preparedImage.naturalWidth / preparedImage.naturalHeight);
+      displayPreparedImage(preparedImage);
+    } else {
+      delete detailImage.dataset.fixedRatio;
+      photoSpread.style.setProperty('--photo-ratio', item.width / item.height || 1.5);
+      detailImage.src = item.full;
+    }
     detailDate.dateTime = item.date;
     detailDate.textContent = formatDate(item.date);
     detailCount.textContent = `${sequence === filtered ? '' : '同一天 · '}${index + 1} / ${sequence.length}`;
@@ -958,7 +1002,9 @@
     }
 
     photoEntrance?.cancel();
-    if (start?.width && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (preparedImage && !reducedMotion.matches) {
+      photoEntrance = photoDetail.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 230, easing: 'ease-out' });
+    } else if (start?.width && !reducedMotion.matches) {
       const end = detailImage.getBoundingClientRect();
       const x = start.left + start.width / 2 - end.left - end.width / 2;
       const y = start.top + start.height / 2 - end.top - end.height / 2;
@@ -1007,15 +1053,15 @@
 
   previousPhotoButton.addEventListener('click', () => moveFocus(-1));
   nextPhotoButton.addEventListener('click', () => moveFocus(1));
-  detailImage.addEventListener('load', () => {
-    if (detailImage.naturalHeight) {
+  photoStage.addEventListener('load', event => {
+    if (event.target === detailImage && detailImage.naturalHeight && !('fixedRatio' in detailImage.dataset)) {
       photoSpread.style.setProperty('--photo-ratio', detailImage.naturalWidth / detailImage.naturalHeight);
     }
-  });
-  detailImage.addEventListener('error', () => {
+  }, true);
+  photoStage.addEventListener('error', event => {
     const item = focusedPhoto();
-    if (item && detailImage.getAttribute('src') === item.full) detailImage.src = item.thumb;
-  });
+    if (event.target === detailImage && item && detailImage.getAttribute('src') === item.full) detailImage.src = item.thumb;
+  }, true);
   photoStage.addEventListener('pointerdown', (event) => {
     if (!event.isPrimary || event.button !== 0) return;
     photoSwipe = { id: event.pointerId, x: event.clientX, y: event.clientY };
