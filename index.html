@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f9e9df">
+    <meta name="description" content="143张照片，记录从2023到2024的大学生活。">
+    <title>这一段路｜大学回忆</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23172922'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%23eff8f4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%237cc8aa' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23f4b759'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="masthead">
+        <a class="identity" href="#" aria-label="回到全部照片">
+          <svg class="rings" viewBox="0 0 44 44" aria-hidden="true">
+            <circle cx="22" cy="22" r="18"></circle>
+            <circle cx="22" cy="22" r="11"></circle>
+            <circle cx="22" cy="22" r="4"></circle>
+          </svg>
+          <span>
+            <strong>这一段路</strong>
+            <small>UNIVERSITY MEMORIES</small>
+          </span>
+        </a>
+
+        <div class="archive-meta" aria-label="相册信息">
+          <span id="date-range">2023 — 2024</span>
+          <span class="meta-divider" aria-hidden="true"></span>
+          <span id="photo-total">143 张生活切片</span>
+        </div>
+
+        <div class="header-actions">
+          <div class="mode-actions">
+            <button id="random-memory" class="random-memory" type="button" aria-label="随机回忆" title="随机回忆" disabled>
+              <span class="random-memory-icon" aria-hidden="true">✦</span>
+              <span class="random-memory-label" aria-hidden="true">随机回忆</span>
+            </button>
+            <div class="mode-switch">
+              <button id="mode-toggle" class="mode-toggle" type="button" aria-expanded="false"
+                aria-controls="mode-options" aria-label="观看模式，当前为照片空间">
+                <span id="mode-current">照片空间</span>
+                <span class="mode-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+              </button>
+              <div id="mode-options" class="mode-options" role="group" aria-label="观看模式" hidden>
+                <button id="mode-space" type="button" aria-pressed="true">照片空间</button>
+                <button id="mode-depth" type="button" aria-pressed="false">立体叠影</button>
+                <button id="mode-ring" type="button" aria-pressed="false">弧线环形</button>
+                <button id="mode-list" type="button" aria-pressed="false">照片列表</button>
+                <button id="mode-tour" type="button" aria-pressed="false">正面巡览</button>
+                <button id="mode-side" type="button" aria-pressed="false">侧面巡览</button>
+              </div>
+            </div>
+          </div>
+          <label class="search-box" for="memory-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg>
+            <input id="memory-search" type="search" placeholder="按日期找回忆…" autocomplete="off">
+            <kbd>↵</kbd>
+          </label>
+          <div class="library-actions">
+            <button id="open-story-backup" class="story-backup-trigger" type="button" aria-haspopup="dialog">故事备份</button>
+            <button id="add-photos" class="photo-import-trigger" type="button">添加照片</button>
+            <input id="photo-import-picker" type="file" accept="image/*" multiple hidden>
+          </div>
+        </div>
+      </header>
+
+      <main id="memory-viewport" class="memory-viewport" aria-label="可拖动和缩放的大学回忆照片空间">
+        <div class="paper-grain" aria-hidden="true"></div>
+        <div id="memory-world" class="memory-world">
+          <div class="memory-orbit orbit-one" aria-hidden="true"></div>
+          <div class="memory-orbit orbit-two" aria-hidden="true"></div>
+          <section id="memory-gallery" class="memory-gallery" aria-live="polite"></section>
+        </div>
+
+        <section id="depth-view" class="depth-view" aria-label="立体叠影观看模式" hidden>
+          <div class="depth-heading">
+            <span class="depth-eyebrow">PHOTO ARCHIVE · DEPTH VIEW</span>
+            <strong>让照片，一张张走近</strong>
+          </div>
+          <div id="depth-stage" class="depth-stage" aria-label="可拖动切换的照片"></div>
+          <div class="depth-controls">
+            <button id="depth-prev" type="button" aria-label="上一张照片">←</button>
+            <div class="depth-progress" aria-live="polite">
+              <span id="depth-date"></span>
+              <span id="depth-count"></span>
+            </div>
+            <button id="depth-next" type="button" aria-label="下一张照片">→</button>
+          </div>
+          <p class="depth-hint">左右拖动 · 滚轮切换 · 点击照片看大图</p>
+        </section>
+
+        <section id="ring-view" class="ring-view" aria-label="环形照片画廊" hidden>
+          <div class="ring-heading">
+            <span>PHOTO ARCHIVE · CIRCULAR VIEW</span>
+            <strong>沿着时光，慢慢转一圈</strong>
+          </div>
+          <div id="ring-stage" class="ring-stage" aria-label="可左右拖动的环形照片画廊"></div>
+          <div class="ring-controls">
+            <button id="ring-prev" type="button" aria-label="上一张照片">←</button>
+            <div class="ring-progress" aria-live="polite">
+              <span id="ring-date"></span>
+              <span id="ring-count"></span>
+            </div>
+            <button id="ring-next" type="button" aria-label="下一张照片">→</button>
+          </div>
+          <p class="ring-hint">拖动旋转 · 滚轮浏览 · 点击照片看大图</p>
+        </section>
+
+        <section id="list-view" class="photo-list-view" aria-label="照片列表" hidden>
+          <div class="photo-list-toolbar">
+            <span id="photo-list-count" aria-live="polite"></span>
+            <div class="photo-list-actions">
+              <button id="open-photo-trash" type="button" aria-haspopup="dialog">最近删除</button>
+              <button id="jump-to-last-photo" type="button">跳到最后</button>
+            </div>
+          </div>
+          <div id="photo-list-scroll" class="photo-list-scroll">
+            <div id="photo-list-grid" class="photo-list-grid"></div>
+          </div>
+        </section>
+
+        <div id="empty-state" class="empty-state" hidden>
+          <strong>这一页暂时空着</strong>
+          <span>换个日期再找找看</span>
+        </div>
+
+        <div class="canvas-caption" aria-hidden="true">
+          <span>A LITTLE DAYS</span>
+          <span class="caption-line"></span>
+          <span>拾 · 一瞬</span>
+        </div>
+
+        <div id="space-end" class="space-end" hidden>
+          <p>已穿过当前所有照片</p>
+          <button id="space-end-reset" type="button">回到全景</button>
+        </div>
+
+        <div class="view-actions" aria-label="照片墙视图控制">
+          <button id="zoom-out" type="button" aria-label="向后退回">−</button>
+          <button id="reset-view" type="button">回到全景</button>
+          <button id="zoom-in" type="button" aria-label="向前穿行">＋</button>
+        </div>
+
+        <p class="gesture-hint"><span aria-hidden="true">◎</span> 点开看大图 · 拖动探索 · 滚轮或双指向前穿行</p>
+
+        <div id="tour-controls" class="tour-controls" role="group" aria-label="巡览控制" hidden>
+          <button id="tour-play" type="button">播放</button>
+          <progress id="tour-progress" max="1" value="0" aria-label="巡览进度"></progress>
+          <div class="tour-speed" role="group" aria-label="播放速度">
+            <span aria-hidden="true">倍速</span>
+            <button type="button" data-tour-rate="1" aria-label="正常速度播放" aria-pressed="true">1×</button>
+            <button type="button" data-tour-rate="2" aria-label="两倍速播放" aria-pressed="false">2×</button>
+          </div>
+          <button id="tour-restart" type="button">从头看</button>
+        </div>
+
+        <section id="photo-detail" class="photo-detail" aria-label="照片详情" hidden>
+          <div class="photo-detail-top">
+            <span>照片详情</span>
+            <div class="photo-detail-actions">
+              <button id="delete-photo" class="photo-delete-button" type="button" aria-haspopup="dialog">删除照片</button>
+              <button id="exit-focus" type="button">返回相册</button>
+            </div>
+          </div>
+          <div class="photo-detail-body">
+            <div id="photo-detail-spread" class="photo-detail-spread">
+              <div id="photo-detail-stage" class="photo-detail-stage">
+                <img id="photo-detail-image" alt="" draggable="false">
+              </div>
+              <aside id="photo-story" class="photo-story" aria-labelledby="photo-story-heading">
+                <header class="photo-story-head">
+                  <p class="photo-story-date"><time id="photo-detail-date"></time></p>
+                  <h2 id="photo-story-heading">照片故事</h2>
+                  <p id="story-place" class="photo-story-place" hidden></p>
+                </header>
+                <div class="photo-story-main">
+                  <p id="story-text" class="photo-story-text"></p>
+                  <form id="story-form" hidden>
+                    <div class="photo-story-fields">
+                      <label>标题 <input id="story-title-input" maxlength="80" type="text" placeholder="给这张照片起个名字"></label>
+                      <label>地点 <input id="story-place-input" maxlength="100" type="text" placeholder="当时在哪里？"></label>
+                    </div>
+                    <label for="story-input">故事</label>
+                    <textarea id="story-input" rows="4" maxlength="3000" placeholder="写一句只有你才知道的回忆。"></textarea>
+                    <div class="photo-story-actions">
+                      <button id="story-cancel" type="button">取消</button>
+                      <button class="photo-story-save" type="submit">保存</button>
+                    </div>
+                  </form>
+                </div>
+                <footer class="photo-story-footer">
+                  <p id="story-status" class="photo-story-status" role="status"></p>
+                  <button id="story-edit" type="button">写故事</button>
+                </footer>
+                <section id="same-day-photos" class="same-day-photos" aria-labelledby="same-day-title" hidden>
+                  <h3 id="same-day-title">同一天的照片</h3>
+                  <div id="same-day-photo-list" class="same-day-photo-list" role="group" aria-labelledby="same-day-title"></div>
+                </section>
+              </aside>
+            </div>
+          </div>
+          <div class="photo-detail-controls" aria-label="大图浏览">
+            <button id="photo-prev" type="button">上一张</button>
+            <div class="photo-detail-meta" aria-live="polite">
+              <span id="photo-detail-count"></span>
+            </div>
+            <button id="photo-next" type="button">下一张</button>
+          </div>
+          <p class="photo-detail-hint">左右滑动翻看</p>
+          <div id="photo-overlap" class="photo-overlap" hidden>
+            <p id="photo-overlap-label">叠在这里的照片</p>
+            <div id="photo-overlap-list" class="photo-overlap-list" role="group" aria-labelledby="photo-overlap-label"></div>
+          </div>
+        </section>
+      </main>
+
+      <nav id="year-filter" class="year-filter" aria-label="按年份筛选照片"></nav>
+    </div>
+
+    <dialog id="confirm-photo-delete" class="album-dialog" aria-labelledby="photo-delete-title">
+      <h2 id="photo-delete-title">删除这张照片？</h2>
+      <div class="photo-delete-preview">
+        <img id="photo-delete-thumb" alt="">
+        <p>照片会移到「最近删除」，可以恢复。设备上的原照片会保留。</p>
+      </div>
+      <div class="photo-delete-actions">
+        <button id="cancel-photo-delete" type="button" autofocus>取消</button>
+        <button id="move-to-photo-trash" class="photo-delete-button" type="button">移到最近删除</button>
+      </div>
+      <p id="photo-delete-status" class="photo-action-status" role="status"></p>
+    </dialog>
+
+    <dialog id="photo-trash" class="album-dialog" aria-labelledby="photo-trash-title">
+      <header class="album-dialog-header">
+        <h2 id="photo-trash-title">最近删除</h2>
+        <button id="close-photo-trash" type="button" autofocus>关闭</button>
+      </header>
+      <p id="photo-trash-empty">暂时没有已删除的照片。</p>
+      <ul id="photo-trash-list" class="photo-trash-list"></ul>
+      <p id="photo-trash-status" class="photo-action-status" role="status"></p>
+    </dialog>
+    <p id="photo-album-message" class="photo-album-message" role="status"></p>
+
+    <dialog id="photo-import" class="album-dialog" aria-labelledby="photo-import-title">
+      <header class="album-dialog-header">
+        <h2 id="photo-import-title">添加照片</h2>
+        <button id="close-photo-import" type="button" autofocus>关闭</button>
+      </header>
+      <p id="photo-import-status" class="photo-import-status" role="status"></p>
+      <progress id="photo-import-progress" aria-label="添加照片进度" hidden></progress>
+      <ul id="photo-import-issues" class="photo-import-issues" hidden></ul>
+      <button id="show-added-photos" class="photo-import-trigger" type="button" hidden>查看新增照片</button>
+    </dialog>
+
+    <dialog id="story-backup" class="album-dialog story-backup" aria-labelledby="story-backup-title">
+      <header class="album-dialog-header">
+        <h2 id="story-backup-title">故事备份</h2>
+        <button id="close-story-backup" type="button" autofocus>关闭</button>
+      </header>
+      <p>备份包含已保存的标题、地点和故事。恢复时，对应照片需已在相册中。</p>
+      <div class="story-backup-actions">
+        <button id="export-stories" type="button">导出故事</button>
+        <button id="pick-story-backup" type="button">选择备份文件</button>
+        <input id="story-backup-file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <section id="story-restore-preview" class="story-restore-preview" aria-label="恢复预览" hidden>
+        <p id="story-restore-summary" aria-live="polite"></p>
+        <fieldset id="story-restore-conflicts" hidden>
+          <legend>遇到已有故事</legend>
+          <label><input name="story-conflicts" type="radio" value="keep" checked> 保留当前故事</label>
+          <label><input name="story-conflicts" type="radio" value="replace"> 用备份覆盖</label>
+        </fieldset>
+        <button id="confirm-story-restore" type="button">确认恢复</button>
+      </section>
+      <p id="story-backup-status" class="story-backup-status" role="status"></p>
+    </dialog>
+
+    <noscript>请开启浏览器的 JavaScript，以浏览这组大学回忆照片。</noscript>
+    <script src="photos.js"></script>
+    <script src="depth-carousel.js"></script>
+    <script src="circular-gallery.js"></script>
+    <script src="photo-story.js"></script>
+    <script src="story-backup.js"></script>
+    <script src="photo-import.js"></script>
+    <script src="photo-trash.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
