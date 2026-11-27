@@ -1,0 +1,57 @@
+name: Import complete album snapshot
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: album-snapshot-import
+  cancel-in-progress: false
+jobs:
+  import:
+    if: github.repository == 'gdriigre/university-memories-2023-2024' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 1
+      - name: Download, verify and commit the album
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALBUM_REPO: ${{ github.repository }}
+          RELEASE_ID: '460112765'
+          SNAPSHOT_SHA256: f299b5dea59006b5bdb9bc0fbfc8620565515ec72f58b1b4e38b9b9cbebdbfc2
+        run: |
+          set -euo pipefail
+          if [[ -d photos/full || -d photos/zoom ]]; then
+            echo 'The album is already imported or the image directories have changed.'
+            exit 1
+          fi
+          work="$(mktemp -d "$RUNNER_TEMP/album.XXXXXX")"
+          gh api "repos/$ALBUM_REPO/releases/$RELEASE_ID/assets?per_page=100" \
+            --jq '[.[] | select(.state == "uploaded" and (.name | test("^site-20261127-part-[0-9]{3}[.]bin$")))] | sort_by(.name) | .[] | [.name, .id] | @tsv' \
+            > "$work/parts.tsv"
+          [[ $(wc -l < "$work/parts.tsv") -eq 54 ]]
+          part=0
+          while IFS=$'\t' read -r name id; do
+            printf -v expected 'site-20261127-part-%03d.bin' "$part"
+            [[ "$name" == "$expected" && "$id" =~ ^[0-9]+$ ]]
+            gh api -H 'Accept: application/octet-stream' "repos/$ALBUM_REPO/releases/assets/$id" > "$work/$name"
+            part=$((part + 1))
+          done < "$work/parts.tsv"
+          cat "$work"/site-20261127-part-*.bin > "$work/album-site.tar"
+          printf '%s  %s\n' "$SNAPSHOT_SHA256" "$work/album-site.tar" | sha256sum -c -
+          mkdir "$work/site"
+          tar -xf "$work/album-site.tar" -C "$work/site"
+          [[ $(find "$work/site" -type f | wc -l) -eq 435 ]]
+          [[ $(find "$work/site/photos/full" -type f -name '*.webp' | wc -l) -eq 143 ]]
+          [[ $(find "$work/site/photos/zoom" -type f -name '*.webp' | wc -l) -eq 137 ]]
+          git ls-files -z -- .nojekyll index.html '*.js' styles.css sunset-campus.webp photos |
+            while IFS= read -r -d '' file; do
+              cmp -- "$file" "$work/site/$file"
+            done
+          cp -a "$work/site/." .
+          git add -- .nojekyll index.html '*.js' styles.css sunset-campus.webp photos
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm 'Publish the complete university memories album'
+          git push origin HEAD:refs/heads/main
