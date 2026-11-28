@@ -5,6 +5,10 @@
   const viewport = document.querySelector('#memory-viewport');
   const world = document.querySelector('#memory-world');
   const gallery = document.querySelector('#memory-gallery');
+  const domeRoot = document.querySelector('#photo-dome');
+  const dome = new window.DomePhotoSpace(domeRoot, (id, button, event) => focusPhoto(id, button, event));
+  const spaceLayoutSwitch = document.querySelector('#space-layout-switch');
+  const spaceLayoutButtons = [...spaceLayoutSwitch.querySelectorAll('button')];
   const filterBar = document.querySelector('#year-filter');
   const search = document.querySelector('#memory-search');
   const emptyState = document.querySelector('#empty-state');
@@ -93,6 +97,7 @@
   let imageUpgrades = 0;
   let zoomAnchor = null;
   let activeMode = 'space';
+  let spaceLayout = 'floating';
   let tourPath = null;
   let tourElapsed = 0;
   let tourRate = 1;
@@ -115,6 +120,10 @@
 
   function isPhotoScene() {
     return activeMode === 'space' || isTourMode();
+  }
+
+  function isDomeActive() {
+    return activeMode === 'space' && spaceLayout === 'dome';
   }
 
   function isTourMode(mode = activeMode) {
@@ -233,7 +242,7 @@
   }
 
   function scheduleImageRefresh() {
-    if (imageRefreshTimer || !isPhotoScene() || activeFocusId) return;
+    if (imageRefreshTimer || !isPhotoScene() || isDomeActive() || activeFocusId) return;
     imageRefreshTimer = window.setTimeout(() => {
       imageRefreshTimer = 0;
       refreshVisibleImages();
@@ -241,7 +250,7 @@
   }
 
   function refreshVisibleImages() {
-    if (!isPhotoScene() || activeFocusId) return;
+    if (!isPhotoScene() || isDomeActive() || activeFocusId) return;
     const bounds = viewport.getBoundingClientRect();
     const anchor = zoomAnchor ?? { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
     const pixelRatio = window.devicePixelRatio || 1;
@@ -502,6 +511,7 @@
       return yearMatches && queryMatches;
     });
     renderGallery();
+    if (isDomeActive()) dome.setItems(filtered);
     if (activeMode === 'list') renderPhotoList();
     depthCarousel.setItems(filtered);
     circularGallery.setItems(filtered);
@@ -560,7 +570,6 @@
     depthView.hidden = !isDepth;
     ringView.hidden = !isRing;
     listView.hidden = !isList;
-    world.setAttribute('aria-hidden', String(!isPhotoScene()));
     syncBackgroundInteraction();
     for (const [name, button] of Object.entries(modeButtons)) {
       button.setAttribute('aria-pressed', String(name === mode));
@@ -589,11 +598,32 @@
   }
 
   function syncBackgroundInteraction() {
-    gallery.inert = !isPhotoScene() || Boolean(activeFocusId);
+    const domeActive = isDomeActive();
+    viewport.classList.toggle('is-dome-layout', domeActive);
+    spaceLayoutSwitch.hidden = activeMode !== 'space';
+    world.setAttribute('aria-hidden', String(!isPhotoScene() || domeActive));
+    gallery.inert = !isPhotoScene() || domeActive || Boolean(activeFocusId);
+    if (domeActive) dome.setItems(filtered);
+    dome.setActive(domeActive);
+    domeRoot.inert = Boolean(activeFocusId);
+    if (domeActive && activeFocusId) dome.stop();
+    zoomInButton.setAttribute('aria-label', domeActive ? '放大球幕' : '向前穿行');
+    zoomOutButton.setAttribute('aria-label', domeActive ? '缩小球幕' : '向后退回');
     depthView.inert = Boolean(activeFocusId);
     ringView.inert = Boolean(activeFocusId);
     listView.inert = Boolean(activeFocusId);
     filterBar.hidden = Boolean(activeFocusId);
+  }
+
+  function setSpaceLayout(layout) {
+    if (spaceLayout === layout) return;
+    stopCameraAnimation();
+    spaceLayout = layout;
+    for (const button of spaceLayoutButtons) {
+      button.setAttribute('aria-pressed', String(button.dataset.spaceLayout === layout));
+    }
+    syncBackgroundInteraction();
+    scheduleImageRefresh();
   }
 
   function alignModeWithPhoto(id) {
@@ -604,6 +634,9 @@
       carousel.select(index);
     } else if (activeMode === 'list') {
       listCards.get(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      lastViewedPhotoId = id;
+    } else if (isDomeActive()) {
+      dome.pointAt(id);
       lastViewedPhotoId = id;
     } else {
       const { layout } = cards.get(id);
@@ -667,29 +700,34 @@
     const startFromOverview = activeMode !== 'space' || !spaceEnd.hidden;
     exitFocus(false);
     setMode('space');
+    const reveal = async (origin, stillCurrent) => {
+      const image = fullImage ?? await ready;
+      if (!stillCurrent() || activeMode !== 'space' || activeFocusId || cards.get(item.id) !== card
+        || storyBackup.isOpen || photoImport.isOpen || photoTrash.isOpen) return;
+      lastRandomPhotoId = item.id;
+      if (!image) {
+        photoTrash.announce('这张照片暂时无法加载，可以再随机选一张。');
+        return;
+      }
+      focusPhoto(item.id, origin, undefined, filtered, image);
+      if (image !== fullImage) {
+        full.then(sharp => {
+          if (detailImage === image && activeFocusId === item.id && 'fixedRatio' in image.dataset) {
+            displayPreparedImage(sharp);
+          }
+        }, () => {});
+      }
+    };
+    if (isDomeActive()) {
+      dome.pointAt(item.id, reveal);
+      return;
+    }
     if (startFromOverview) showOpeningView();
     const depth = card.layout.z + view.z;
     animateView(viewCenteredOn(card.layout, Math.max(560, Math.min(620, depth))), {
       duration: 1150,
       ease: progress => progress * progress * (3 - 2 * progress),
-      onComplete: async revision => {
-        const image = fullImage ?? await ready;
-        if (revision !== cameraRevision || activeMode !== 'space' || activeFocusId || cards.get(item.id) !== card
-          || storyBackup.isOpen || photoImport.isOpen || photoTrash.isOpen) return;
-        lastRandomPhotoId = item.id;
-        if (!image) {
-          photoTrash.announce('这张照片暂时无法加载，可以再随机选一张。');
-          return;
-        }
-        focusPhoto(item.id, card.element, undefined, filtered, image);
-        if (image !== fullImage) {
-          full.then(sharp => {
-            if (detailImage === image && activeFocusId === item.id && 'fixedRatio' in image.dataset) {
-              displayPreparedImage(sharp);
-            }
-          }, () => {});
-        }
-      },
+      onComplete: revision => reveal(card.element, () => revision === cameraRevision && !isDomeActive()),
     });
   }
 
@@ -1085,14 +1123,15 @@
   }, true);
 
   viewport.addEventListener('click', (event) => {
-    if (!isPhotoScene() || activeFocusId || event.target.closest('.view-actions, .space-end, .tour-controls')) return;
+    if (!isPhotoScene() || isDomeActive() || activeFocusId
+      || event.target.closest('.view-actions, .space-end, .tour-controls, .space-layout-switch')) return;
     if (event.detail !== 0 && didDrag) return;
     const card = event.target.closest('.memory-card');
     openScenePhoto(card?.dataset.id, card, event);
   });
 
   viewport.addEventListener('wheel', (event) => {
-    if (activeFocusId || activeMode !== 'space') return;
+    if (activeFocusId || activeMode !== 'space' || isDomeActive()) return;
     event.preventDefault();
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1;
     const travel = clamp(-event.deltaY * unit * 1.65, -420, 420);
@@ -1101,8 +1140,8 @@
 
   viewport.addEventListener('pointerdown', (event) => {
     if (isTourMode() && !activeFocusId && event.target.closest('.memory-card')) pauseTour();
-    if (activeFocusId || activeMode !== 'space' || event.button !== 0) return;
-    if (event.target.closest('.view-actions, .space-end')) return;
+    if (activeFocusId || activeMode !== 'space' || isDomeActive() || event.button !== 0) return;
+    if (event.target.closest('.view-actions, .space-end, .space-layout-switch')) return;
     stopCameraAnimation();
     if (!pointers.size) {
       didDrag = false;
@@ -1121,7 +1160,7 @@
   });
 
   viewport.addEventListener('pointermove', (event) => {
-    if (activeMode !== 'space') return;
+    if (activeMode !== 'space' || isDomeActive()) return;
     if (!pointers.has(event.pointerId)) return;
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     const threshold = event.pointerType === 'touch' ? 12 : DRAG_THRESHOLD;
@@ -1179,14 +1218,18 @@
 
   resetButton.addEventListener('click', () => {
     if (activeFocusId) exitFocus(false);
-    fitView(true);
+    if (isDomeActive()) dome.reset();
+    else fitView(true);
   });
   document.querySelector('#space-end-reset').addEventListener('click', () => {
     fitView(true, viewport.clientWidth < 600 ? 1.18 : 1.05);
     modeToggle.focus({ preventScroll: true });
   });
-  zoomInButton.addEventListener('click', () => centerTravel(245));
-  zoomOutButton.addEventListener('click', () => centerTravel(-245));
+  zoomInButton.addEventListener('click', () => isDomeActive() ? dome.zoomBy(1.2) : centerTravel(245));
+  zoomOutButton.addEventListener('click', () => isDomeActive() ? dome.zoomBy(0.83) : centerTravel(-245));
+  for (const button of spaceLayoutButtons) {
+    button.addEventListener('click', () => setSpaceLayout(button.dataset.spaceLayout));
+  }
   exitFocusButton.addEventListener('click', () => exitFocus());
   randomMemoryButton.addEventListener('click', showRandomMemory);
   tourPlay.addEventListener('click', () => {

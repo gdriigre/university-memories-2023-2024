@@ -671,6 +671,123 @@ button {
   display: none;
 }
 
+.space-layout-switch {
+  position: absolute;
+  top: 12px;
+  left: clamp(12px, 3.4vw, 52px);
+  z-index: 12;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--print-edge);
+  border-radius: 999px;
+  background: var(--warm-glass);
+  box-shadow: 0 3px 12px rgba(89, 58, 44, 0.1);
+}
+
+.space-layout-switch[hidden],
+.photo-dome[hidden],
+.photo-dome-hint {
+  display: none;
+}
+
+.space-layout-switch button {
+  min-height: 44px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--green-deep);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.space-layout-switch button[aria-pressed="true"] {
+  background: var(--terracotta);
+  color: white;
+}
+
+.space-layout-switch button:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.memory-viewport.is-dome-layout :is(.memory-world, .space-end, .floating-hint) {
+  display: none;
+}
+
+.photo-dome {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  cursor: grab;
+  outline: 0;
+  touch-action: none;
+}
+
+.photo-dome.is-turning,
+.photo-dome.is-turning .photo-dome-tile {
+  cursor: grabbing;
+}
+
+.photo-dome:focus-visible {
+  outline: 2px solid var(--terracotta);
+  outline-offset: -3px;
+}
+
+.photo-dome-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  perspective: var(--dome-perspective, 1100px);
+  perspective-origin: 50% 48%;
+}
+
+.photo-dome-sphere {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.photo-dome-tile {
+  position: absolute;
+  top: calc(var(--dome-tile-height) * -0.5);
+  left: calc(var(--dome-tile-width) * -0.5);
+  width: var(--dome-tile-width);
+  height: var(--dome-tile-height);
+  padding: 3px;
+  border: 1px solid var(--print-edge);
+  border-radius: var(--print-radius);
+  background: var(--print-paper);
+  box-shadow: var(--print-shadow);
+  backface-visibility: hidden;
+  pointer-events: auto;
+  cursor: zoom-in;
+}
+
+.photo-dome-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--print-mat);
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.photo-dome-tile:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 3px;
+}
+
+.memory-viewport.is-dome-layout .photo-dome-hint {
+  display: block;
+}
+
 .photo-list-view {
   position: absolute;
   inset: 0;
@@ -1261,7 +1378,7 @@ button {
   touch-action: auto;
 }
 
-.memory-viewport.is-focused :is(.canvas-caption, .gesture-hint, .view-actions, .space-end, .tour-controls) {
+.memory-viewport.is-focused :is(.canvas-caption, .gesture-hint, .view-actions, .space-end, .tour-controls, .space-layout-switch) {
   visibility: hidden;
 }
 
@@ -2085,6 +2202,16 @@ noscript {
 
   .view-actions {
     display: none;
+  }
+
+  .memory-viewport.is-dome-layout .view-actions {
+    display: grid;
+    right: 12px;
+    bottom: max(65px, calc(env(safe-area-inset-bottom) + 54px));
+  }
+
+  .memory-viewport.is-dome-layout .photo-dome-hint {
+    bottom: max(117px, calc(env(safe-area-inset-bottom) + 106px));
   }
 
   .year-filter {

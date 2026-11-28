@@ -7,7 +7,7 @@
     <meta name="description" content="143张照片，记录从2023到2024的大学生活。">
     <title>这一段路｜大学回忆</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23172922'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%23eff8f4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='12' fill='none' stroke='%237cc8aa' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23f4b759'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="styles.css?v=20261127-paper-album">
+    <link rel="stylesheet" href="styles.css?v=20261128-dome">
   </head>
   <body>
     <div class="app-shell">
@@ -71,6 +71,15 @@
           <div class="memory-orbit orbit-one" aria-hidden="true"></div>
           <div class="memory-orbit orbit-two" aria-hidden="true"></div>
           <section id="memory-gallery" class="memory-gallery" aria-live="polite"></section>
+        </div>
+        <section id="photo-dome" class="photo-dome" aria-label="照片球幕，使用方向键旋转" tabindex="0" hidden>
+          <div class="photo-dome-stage">
+            <div class="photo-dome-sphere"></div>
+          </div>
+        </section>
+        <div id="space-layout-switch" class="space-layout-switch" role="group" aria-label="照片空间布局">
+          <button type="button" data-space-layout="floating" aria-controls="memory-world" aria-pressed="true">漂浮</button>
+          <button type="button" data-space-layout="dome" aria-controls="photo-dome" aria-pressed="false">球幕</button>
         </div>
 
         <section id="depth-view" class="depth-view" aria-label="立体叠影观看模式" hidden>
@@ -142,7 +151,8 @@
           <button id="zoom-in" type="button" aria-label="向前穿行">＋</button>
         </div>
 
-        <p class="gesture-hint"><span aria-hidden="true">◎</span> 点开看大图 · 拖动探索 · 滚轮或双指向前穿行</p>
+        <p class="gesture-hint floating-hint"><span aria-hidden="true">◎</span> 点开看大图 · 拖动探索 · 滚轮或双指向前穿行</p>
+        <p class="gesture-hint photo-dome-hint">拖动旋转 · 双指或滚轮缩放 · 点开看大图</p>
 
         <div id="tour-controls" class="tour-controls" role="group" aria-label="巡览控制" hidden>
           <button id="tour-play" type="button">播放</button>
@@ -284,6 +294,7 @@
     <script src="story-backup.js"></script>
     <script src="photo-import.js"></script>
     <script src="photo-trash.js"></script>
-    <script src="app.js?v=20261127-random-smooth"></script>
+    <script src="dome-photo-space.js?v=20261128-dome"></script>
+    <script src="app.js?v=20261128-dome"></script>
   </body>
 </html>
